@@ -66,6 +66,17 @@ parcelles_D42 <-
   st_transform(st_crs("WGS84"))
 
 
+# Export centroids D42
+parcelles_D42_centroids <-
+  parcelles_R84_centroids %>%
+  right_join(parcelles_D42%>%as_tibble()%>%select(ID_PARCEL), by="ID_PARCEL")
+
+parcelles_D42_centroids %>% 
+  dplyr::mutate(lon = sf::st_coordinates(.)[,1],
+                lat = sf::st_coordinates(.)[,2]) %>%
+  as_tibble() %>% select(-n, -geometry)%>%
+  write_csv("data/out/parcelles_D42_centroids.csv")
+
 ## MAPPING parcelle <-> point SAFRAN
 
 
@@ -79,14 +90,14 @@ safran_R84_point <- read_delim("data/safran/aladin_safran_REF/indicesALADIN63_CN
 
 # Pour chaque point SAFRAN du R84, on trouve les parcelles D42 correspondantes
 # Les points SAFRAN hors D42 n'auront donc pas de parcelle correspondante
-safran_42_mapped_parcelle <- safran_R84_point %>%
+safran_D42_mapped_parcelle <- safran_R84_point %>%
   st_join(., st_as_sf(st_make_valid(parcelles_D42)), join = st_intersects)
 
 
-safran_42_mapped_parcelle %>%
+safran_D42_mapped_parcelle %>%
   as_tibble() %>%
   select(-geometry, safran_point_id=point_id, lat, lon)%>% 
-  write_csv("data/out/safran_42_mapped_parcelle.csv")
+  write_csv("data/out/safran_D42_mapped_parcelle.csv")
 
 
 safran_42_mapped_parcelle %>% count(ID_PARCEL)
