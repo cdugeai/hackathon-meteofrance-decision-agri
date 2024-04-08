@@ -123,3 +123,16 @@ stations_D42 %>%
                 lat = sf::st_coordinates(.)[,2]) %>%
   as_tibble() %>% select(-geometry)%>%
   write_csv("data/out/stations_D42.csv")
+
+
+stations_D42_comm_code <- stations_D42 %>%
+  st_join(., st_as_sf(communes_42_geo), join = st_intersects) %>% 
+  dplyr::select(station_id, station_name, station_elevation, com_code) %>%
+  mutate(com_code = str_extract(com_code, '[0-9]+'))
+
+stations_D42_comm_code %>% 
+  dplyr::mutate(lon = sf::st_coordinates(.)[,1],
+                lat = sf::st_coordinates(.)[,2]) %>%
+  as_tibble() %>% select(-geometry) %>%
+  write_csv("data/out/stations_D42_comm_code.csv")
+
