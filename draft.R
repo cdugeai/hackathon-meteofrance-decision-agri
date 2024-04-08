@@ -57,35 +57,36 @@ parcelles_D42_code_com %>%
   as_tibble() %>%
   select(-geometry, -com_code, -n)%>% 
   write_csv("data/out/parcelles_D42_code_com.csv")
+#parcelles_D42_code_com <- read_csv("data/out/parcelles_D42_code_com.csv") %>% st_as_sf(.,coords=c("lat","lon"), crs= st_crs("WGS84"))
 
+
+parcelles_D42 <-
+  parcelles_R84 %>%
+  right_join(parcelles_D42_code_com %>% as_tibble()%>%select(ID_PARCEL), by="ID_PARCEL") %>%
+  st_transform(st_crs("WGS84"))
 
 
 ## MAPPING parcelle <-> point SAFRAN
 
 
-safran_42_shp <- st_read(
-  "data/safran/safran_points-point.shp")
+#safran_42_shp <- st_read("data/safran/safran_points-point.shp")
 
-safran_42 <- read_delim("data/safran/aladin_safran_REF/indicesALADIN63_CNRM-CM5_24040815222841316.KEYuUOd9090U7BAAOOBBBB.txt", delim = ";") %>%
+safran_R84_point <- read_delim("data/safran/aladin_safran_REF/indicesALADIN63_CNRM-CM5_24040815222841316.KEYuUOd9090U7BAAOOBBBB.txt", delim = ";") %>%
   select(point_id=Point, lat=Latitude, lon=Longitude) %>%
   count(point_id, lat, lon, name="n") %>%
-  arrange(point_id)
+  arrange(point_id) %>%
+  st_as_sf(coords = c("lon","lat"), remove = FALSE, crs=st_crs("WGS84"))
 
-safran_42_point <- 
-  st_as_sf(safran_42, coords = c("lon","lat"), remove = FALSE) %>%
-  st_set_crs("WGS84") %>% st_as_sf() %>%
-  mutate(geometry = st_transform(geometry, 4269))
-
-
-parcelles_42_proj_4269 <- 
-  parcelles_42 %>%
-  mutate(geometry = st_transform(geometry, 4269))
-
-safran_42_mapped_parcelle <- 
-  safran_42_point %>%
-  st_join(., st_as_sf(st_make_valid(parcelles_42_proj_4269)), join = st_nearest_feature)
+# Pour chaque point SAFRAN du R84, on trouve les parcelles D42 correspondantes
+# Les points SAFRAN hors D42 n'auront donc pas de parcelle correspondante
+safran_42_mapped_parcelle <- safran_R84_point %>%
+  st_join(., st_as_sf(st_make_valid(parcelles_D42)), join = st_intersects)
 
 
+safran_42_mapped_parcelle %>%
+  as_tibble() %>%
+  select(-geometry, safran_point_id=point_id, lat, lon)%>% 
+  write_csv("data/out/safran_42_mapped_parcelle.csv")
 
 
 safran_42_mapped_parcelle %>% count(ID_PARCEL)
