@@ -90,7 +90,7 @@ safran_R84_point <- read_delim("data/safran/aladin_safran_REF/indicesALADIN63_CN
   arrange(point_id) %>%
   st_as_sf(coords = c("lon","lat"), remove = FALSE, crs=st_crs("WGS84"))
 
-# Pour chaque point SAFRAN du R84, on trouve les parcelles D42 correspondantes
+# Pour chaque point SAFRAN du R84, on trouve la parcelles D42 qui le contient
 # Les points SAFRAN hors D42 n'auront donc pas de parcelle correspondante
 safran_D42_mapped_parcelle <- safran_R84_point %>%
   st_join(., st_as_sf(st_make_valid(parcelles_D42)), join = st_intersects)
@@ -100,6 +100,8 @@ safran_D42_mapped_parcelle_k_nn <-
   safran_R84_point %>%
   st_join(., st_as_sf(st_make_valid(parcelles_D42_centroids)), join = st_nn)
 
+
+
 safran_D42_mapped_parcelle %>%
   as_tibble() %>%
   select(-geometry, safran_point_id=point_id, lat, lon)%>% 
@@ -108,6 +110,9 @@ safran_D42_mapped_parcelle %>%
 
 safran_42_mapped_parcelle %>% count(ID_PARCEL)
 
+safran_D42 <- 
+  safran_42_mapped_parcelle %>% filter(!is.na(ID_PARCEL)) %>%
+  select(point_id)
 
 ## MAPPING stations meteo
 
@@ -138,9 +143,7 @@ stations_D42_comm_code %>%
 
 
 ## MAPPING parcelle -> SAFRAN le plus proche
-safran_D42 <- 
-  safran_42_mapped_parcelle %>% filter(!is.na(ID_PARCEL)) %>%
-  select(point_id)
+
 
 
 parcelles_D42_mapped_safran <-
