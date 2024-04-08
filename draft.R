@@ -3,7 +3,9 @@ library(readr)
 library(tidyr)
 library(dplyr)
 library(stringr)
+library(nngeo)
 library("rjson")
+library(geojsonsf)
 
 # Download the zip file and save to 'temp' 
 URL <- "https://data.geopf.fr/telechargement/download/RPG/RPG_2-0__SHP_LAMB93_R84_2021-01-01/RPG_2-0__SHP_LAMB93_R84_2021-01-01.7z"
@@ -93,6 +95,10 @@ safran_R84_point <- read_delim("data/safran/aladin_safran_REF/indicesALADIN63_CN
 safran_D42_mapped_parcelle <- safran_R84_point %>%
   st_join(., st_as_sf(st_make_valid(parcelles_D42)), join = st_intersects)
 
+# mapping par point les plus proches
+safran_D42_mapped_parcelle_k_nn <-
+  safran_R84_point %>%
+  st_join(., st_as_sf(st_make_valid(parcelles_D42_centroids)), join = st_nn)
 
 safran_D42_mapped_parcelle %>%
   as_tibble() %>%
@@ -101,3 +107,19 @@ safran_D42_mapped_parcelle %>%
 
 
 safran_42_mapped_parcelle %>% count(ID_PARCEL)
+
+
+## MAPPING stations meteo
+
+
+stations_fr <- geojson_sf("data/geo/stations_meteo_via_infoclimat.geojson")
+
+stations_D42 <-
+  stations_fr %>% filter(departement==42) %>%
+  select(station_id=id, station_name=name, station_elevation=elevation)
+
+stations_D42 %>% 
+  dplyr::mutate(lon = sf::st_coordinates(.)[,1],
+                lat = sf::st_coordinates(.)[,2]) %>%
+  as_tibble() %>% select(-geometry)%>%
+  write_csv("data/out/stations_D42.csv")
