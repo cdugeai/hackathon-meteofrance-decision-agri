@@ -136,3 +136,24 @@ stations_D42_comm_code %>%
   as_tibble() %>% select(-geometry) %>%
   write_csv("data/out/stations_D42_comm_code.csv")
 
+
+## MAPPING parcelle -> SAFRAN le plus proche
+safran_D42 <- 
+  safran_42_mapped_parcelle %>% filter(!is.na(ID_PARCEL)) %>%
+  select(point_id)
+
+
+parcelles_D42_mapped_safran <-
+  parcelles_D42_centroids %>%
+  st_join(., st_as_sf(safran_D42), join = st_nn)
+
+parcelles_D42_mapped_safran %>% 
+  dplyr::mutate(nearest_safran_lon = sf::st_coordinates(.)[,1],
+                nearest_safran_lat = sf::st_coordinates(.)[,2]) %>%
+  as_tibble() %>% select(-geometry, -n) %>%
+  rename(nearest_safran_id=point_id) %>%
+  write_csv("data/out/parcelles_D42_mapped_safran.csv")
+
+# Nombre de parcelles associées à un même point SAFRAN
+parcelles_D42_mapped_safran %>% as_tibble() %>% select(-geometry) %>% count(point_id) %>% arrange(-n)
+
