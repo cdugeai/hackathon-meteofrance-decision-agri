@@ -160,3 +160,16 @@ parcelles_D42_mapped_safran %>%
 # Nombre de parcelles associées à un même point SAFRAN
 parcelles_D42_mapped_safran %>% as_tibble() %>% select(-geometry) %>% count(point_id) %>% arrange(-n)
 
+## MAPPING parcelle -> station meteo la plus proche
+
+
+parcelles_D42_mapped_station <-
+  parcelles_D42_centroids %>%
+  st_join(., stations_D42, join = st_nn) %>%
+  select(ID_PARCEL, nearest_station_id=station_id, nearest_station_elevation=station_elevation)
+
+parcelles_D42_mapped_station %>%
+  dplyr::mutate(nearest_safran_lon = sf::st_coordinates(.)[,1],
+                nearest_safran_lat = sf::st_coordinates(.)[,2]) %>%
+  as_tibble() %>% select(-geometry) %>%
+  write_csv("data/out/parcelles_D42_mapped_station.csv")
