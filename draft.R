@@ -117,11 +117,11 @@ safran_D42 <-
 ## MAPPING stations meteo
 
 
-stations_fr <- geojson_sf("data/geo/stations_meteo_via_infoclimat.geojson")
+stations_fr <- geojson_sf("data/geo/stations_meteo_corrected.json")
 
 stations_D42 <-
-  stations_fr %>% filter(departement==42) %>%
-  select(station_id=id, station_name=name, station_elevation=elevation)
+  stations_fr %>% filter(NUM_DEP==42) %>%
+  select(NUM_POSTE, station_nom=NOM_USUEL, station_commune=COMMUNE, station_elevation=ALTI)
 
 stations_D42 %>% 
   dplyr::mutate(lon = sf::st_coordinates(.)[,1],
@@ -132,7 +132,7 @@ stations_D42 %>%
 
 stations_D42_comm_code <- stations_D42 %>%
   st_join(., st_as_sf(communes_42_geo), join = st_intersects) %>% 
-  dplyr::select(station_id, station_name, station_elevation, com_code) %>%
+  dplyr::select(NUM_POSTE, station_nom, station_elevation, com_code) %>%
   mutate(com_code = str_extract(com_code, '[0-9]+'))
 
 stations_D42_comm_code %>% 
